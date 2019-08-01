@@ -4,7 +4,7 @@
 # Scans FortiSIEM eventdb on NFS for purgeable data
 # Data expiration can be configured in days old
 # ------------------------------------------------------------------
-VERSION=1.1.0
+VERSION=1.1.2
 SUBJECT=getPurge.sh
 ARGS='[OPTIONAL -p | --purge]'
 USAGE="Usage: $SUBJECT $ARGS"
@@ -23,7 +23,6 @@ targetdate=$(date -d@$targetdate +%D)
 rpttargetdate=$(( $rptday * 86400 ))
 rpttargetdate=$(date -d@$rpttargetdate +%D)
 mode=${1:-'--show'}
-
 
 case "$mode" in
     --purge|-p)
@@ -61,11 +60,13 @@ purge() {
     echo "Beginning purge routine"
     if parallel 2>/dev/null 1>/dev/null; then
         echo "$1" | parallel -j${purge_threads} "echo {} & rm -fr {}"
-	else
-	   echo "Unable to find parallel to run multi-threaded, running in single thread mode"
-	   sleep 5
-       echo "Removing $1"
-	   rm -f "$1"
+        else
+           echo "Unable to find parallel to run multi-threaded, running in single thread mode"
+           sleep 5
+       while read dir; do
+           echo "Removing $dir"
+               rm -fr "$dir"
+           done <<< "$1"
     fi
 }
 
